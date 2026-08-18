@@ -278,6 +278,17 @@ elif menu == "Settings":
             db.set_setting("leetcode_username", leetcode_user)
             db.set_setting("emergency_pin", pin_val)
             db.set_setting("start_with_windows", str(autostart_val))
+            
+            # Execute startup shortcut creation/deletion immediately
+            try:
+                import startup_helper
+                if autostart_val:
+                    startup_helper.create_startup_shortcut()
+                else:
+                    startup_helper.remove_startup_shortcut()
+            except Exception as e:
+                print(f"Startup toggle error: {e}")
+                
             st.success("Core settings updated successfully!")
             st.rerun()
 

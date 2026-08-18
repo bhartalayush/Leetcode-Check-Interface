@@ -18,8 +18,8 @@ cd /d "%~dp0"
 :: Initialize DB
 python db.py
 
-:: Register Registry Autostart key based on Database settings to run the launcher directly
-python -c "import db, winreg, sys; val = db.get_setting('start_with_windows', 'False'); key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_SET_VALUE); winreg.SetValueEx(key, 'DSALock', 0, winreg.REG_SZ, 'cmd.exe /c ' + repr(r'%~dp0run.bat')) if val == 'True' else winreg.DeleteValue(key, 'DSALock') if hasattr(key, 'DeleteValue') else None" 2>nul
+:: Create or remove startup shortcut link based on Database settings
+python -c "import db, startup_helper; val = db.get_setting('start_with_windows', 'False'); startup_helper.create_startup_shortcut() if val == 'True' else startup_helper.remove_startup_shortcut()" 2>nul
 
 :: Start the background daemon with admin privileges
 start /b pythonw daemon.py
