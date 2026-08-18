@@ -16,7 +16,7 @@ A local-only Windows desktop productivity application designed to enforce a dail
 4. Emergency Unlock: Bypasses locks for 30 minutes via a configurable PIN.
 5. Temporary Suspension: Pauses blocking rules for 2 hours for uninterrupted focus sessions.
 6. DSA Planner: Queue planned questions and receive recommendations matching outstanding target points.
-7. Holiday Mode: Schedule holiday dates to bypass daily targets and debt accumulation.
+7. Holiday Mode: Schedule holiday dates to bypass daily targets and debt accumulation. Allows retroactive holiday logging to clear accidental backlog debt.
 8. Master Kill Switch: Disables the blocker permanently and cleans system records when activated.
 
 ## Installation and Startup
