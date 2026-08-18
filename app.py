@@ -127,8 +127,20 @@ if menu == "Dashboard":
 
     # Lock Warning
     if locked:
-        st.error(f"⚠️ **Laptop Access Restricted!** Complete {stats['debt']:.1f} points worth of DSA problems to unlock recreation apps.")
-        st.markdown("[Open LeetCode](https://leetcode.com/problemset/all/)")
+        st.markdown(f"""
+        <div style="background-color: #3d0c0c; border: 1px solid #ff4b4b; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #ff4b4b; margin: 0 0 10px 0; font-family: sans-serif;">⚠️ Laptop Access Restricted</h3>
+            <p style="color: #ffcccc; margin: 0 0 15px 0; font-size: 15px;">You carry a DSA debt of <b>{stats['debt']:.1f} points</b>. Recreational apps and sites are locked.</p>
+            <a href="https://leetcode.com/problemset/all/" target="_blank" style="background-color: #ff4b4b; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Open LeetCode →</a>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="background-color: #0c3d1e; border: 1px solid #28a745; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+            <h3 style="color: #28a745; margin: 0 0 5px 0; font-family: sans-serif;">🎉 System Unlocked & Safe</h3>
+            <p style="color: #ccffdd; margin: 0; font-size: 15px;">Keep up the streak! You have no outstanding debt today.</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     col_entry, col_list = st.columns([1, 1])
     
@@ -253,48 +265,108 @@ elif menu == "Settings":
         
         leetcode_user = st.text_input("LeetCode Username (For Auto Verification)", value=db.get_setting("leetcode_username", ""))
         
-        blocklist_apps_val = st.text_area("Blocked Applications (Executable process names, comma separated)", value=db.get_setting("blocklist_apps", ""))
-        blocklist_dom_val = st.text_area("Blocked Web Domains (Comma separated)", value=db.get_setting("blocklist_domains", ""))
-        
         pin_val = st.text_input("Emergency Unlock PIN (Numbers only)", type="password", value=db.get_setting("emergency_pin", "1234"))
-        
         autostart_val = st.checkbox("Start Automatically with Windows", value=(db.get_setting("start_with_windows", "False") == "True"))
         
-        save_settings = st.form_submit_button("Save Changes")
+        save_settings = st.form_submit_button("Save Core Settings")
         if save_settings:
-            # Clean and parse domains: extract raw domain names if user pasted URLs
-            cleaned_domains = []
-            for item in blocklist_dom_val.split(","):
-                item_cleaned = item.strip().lower()
-                if not item_cleaned:
-                    continue
-                # Strip protocol
-                if "://" in item_cleaned:
-                    item_cleaned = item_cleaned.split("://")[-1]
-                # Strip paths / parameters
-                item_cleaned = item_cleaned.split("/")[0]
-                # Strip port numbers
-                item_cleaned = item_cleaned.split(":")[0]
-                # Strip www.
-                if item_cleaned.startswith("www."):
-                    item_cleaned = item_cleaned[4:]
-                    
-                if item_cleaned:
-                    cleaned_domains.append(item_cleaned)
-                    
             db.set_setting("daily_target", target_pts)
             db.set_setting("max_debt", max_debt_pts)
             db.set_setting("easy_points", easy_pts)
             db.set_setting("medium_points", med_pts)
             db.set_setting("hard_points", hard_pts)
             db.set_setting("leetcode_username", leetcode_user)
-            db.set_setting("blocklist_apps", blocklist_apps_val)
-            db.set_setting("blocklist_domains", ",".join(cleaned_domains))
             db.set_setting("emergency_pin", pin_val)
             db.set_setting("start_with_windows", str(autostart_val))
-            
-            st.success("Settings updated successfully!")
+            st.success("Core settings updated successfully!")
             st.rerun()
+
+    # Blocklist Apps UI Manager
+    st.markdown("---")
+    st.subheader("🚫 Blocked Applications (.exe)")
+    col_add_app, col_list_app = st.columns([1, 1])
+    
+    # Read Apps blocklist from db
+    app_list_raw = db.get_setting("blocklist_apps", "")
+    current_apps = [a.strip().lower() for a in app_list_raw.split(",") if a.strip()]
+    
+    with col_add_app:
+        st.markdown("**Add App to Blocklist**")
+        new_app_input = st.text_input("Enter Process Name", placeholder="e.g. steam.exe")
+        if st.button("Block App"):
+            new_app_clean = new_app_input.strip().lower()
+            if new_app_clean:
+                if not new_app_clean.endswith(".exe"):
+                    new_app_clean += ".exe"
+                if new_app_clean not in current_apps:
+                    current_apps.append(new_app_clean)
+                    db.set_setting("blocklist_apps", ",".join(current_apps))
+                    st.success(f"Added {new_app_clean} to blocklist!")
+                    st.rerun()
+                else:
+                    st.warning("App is already blocked.")
+            else:
+                st.error("Please enter a valid process name.")
+                
+    with col_list_app:
+        st.markdown("**Currently Blocked Apps**")
+        if current_apps:
+            for app in current_apps:
+                col_txt, col_btn = st.columns([3, 1])
+                col_txt.write(f"🎮 `{app}`")
+                if col_btn.button("Unblock", key=f"unblock_app_{app}"):
+                    current_apps.remove(app)
+                    db.set_setting("blocklist_apps", ",".join(current_apps))
+                    st.rerun()
+        else:
+            st.info("No applications are currently blocked.")
+
+    # Blocklist Domains/Websites UI Manager
+    st.markdown("---")
+    st.subheader("🌐 Blocked Websites / URLs")
+    col_add_dom, col_list_dom = st.columns([1, 1])
+    
+    # Read Domains blocklist from db
+    dom_list_raw = db.get_setting("blocklist_domains", "")
+    current_domains = [d.strip().lower() for d in dom_list_raw.split(",") if d.strip()]
+    
+    with col_add_dom:
+        st.markdown("**Add Website/URL to Blocklist**")
+        new_dom_input = st.text_input("Enter URL or Domain Name", placeholder="e.g. youtube.com or https://instagram.com/inbox")
+        if st.button("Block Website"):
+            item_cleaned = new_dom_input.strip().lower()
+            if item_cleaned:
+                # Clean URL components automatically
+                if "://" in item_cleaned:
+                    item_cleaned = item_cleaned.split("://")[-1]
+                item_cleaned = item_cleaned.split("/")[0]
+                item_cleaned = item_cleaned.split(":")[0]
+                if item_cleaned.startswith("www."):
+                    item_cleaned = item_cleaned[4:]
+                    
+                if item_cleaned:
+                    if item_cleaned not in current_domains:
+                        current_domains.append(item_cleaned)
+                        db.set_setting("blocklist_domains", ",".join(current_domains))
+                        st.success(f"Added {item_cleaned} to blocklist!")
+                        st.rerun()
+                    else:
+                        st.warning("Website is already blocked.")
+            else:
+                st.error("Please enter a valid URL.")
+                
+    with col_list_dom:
+        st.markdown("**Currently Blocked Websites**")
+        if current_domains:
+            for domain in current_domains:
+                col_txt, col_btn = st.columns([3, 1])
+                col_txt.write(f"🌐 `{domain}`")
+                if col_btn.button("Unblock", key=f"unblock_dom_{domain}"):
+                    current_domains.remove(domain)
+                    db.set_setting("blocklist_domains", ",".join(current_domains))
+                    st.rerun()
+        else:
+            st.info("No websites are currently blocked.")
 
     st.markdown("---")
     st.subheader("🧪 Testing & Trial Lock")
