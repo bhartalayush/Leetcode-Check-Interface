@@ -443,9 +443,9 @@ elif menu == "Settings":
                 cursor.execute("INSERT INTO holidays (date) VALUES (?)", (date_str,))
                 conn.commit()
                 st.success(f"Added {date_str} as holiday!")
-                # Re-initialize today if today was added as holiday
-                if date_str == today:
-                    logic.init_today_stats(today, conn)
+                # Retroactively rebuild statistics to recalculate debt
+                import history_rebuilder
+                history_rebuilder.rebuild_all_history()
                 st.rerun()
             except sqlite3.IntegrityError:
                 st.warning("This date is already a holiday.")
@@ -469,9 +469,9 @@ elif menu == "Settings":
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM holidays WHERE date = ?", (h_date,))
                     conn.commit()
-                    # Re-initialize stats if current day holiday is removed
-                    if h_date == today:
-                        logic.init_today_stats(today, conn)
+                    # Retroactively rebuild statistics to recalculate debt
+                    import history_rebuilder
+                    history_rebuilder.rebuild_all_history()
                     conn.close()
                     st.rerun()
         else:
