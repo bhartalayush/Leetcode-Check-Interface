@@ -25,6 +25,6 @@ A local-only Windows desktop productivity application designed to enforce a dail
    python db.py
 
 2. Launch the application:
-   Double-click run.bat
+   Right-click run.bat and select "Run as administrator"
 
-The launcher script will automatically request administrator privileges to support registry autostart registration, launch the background blocker service silently, and open the Streamlit web dashboard in your default browser.
+The launcher script will automatically request administrator privileges. Running as administrator is required to write autostart registry configuration, execute background processes, clean hosts-level domain rules, and open the Streamlit web dashboard in your default browser.
